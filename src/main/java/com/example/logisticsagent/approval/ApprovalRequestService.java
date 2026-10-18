@@ -31,6 +31,23 @@ public class ApprovalRequestService {
     String recommendedAction,
     String explanation) {
 
+    if (!"Move order to OUT_FOR_DELIVERY".equals(recommendedAction)) {
+      throw new IllegalArgumentException(
+        "This approval action is not supported");
+    }
+
+    DeliveryOrder order = deliveryOrderService.getById(orderId);
+
+    if (!order.getOrderNumber().equals(orderNumber)) {
+      throw new IllegalArgumentException(
+        "Approval order number does not match the delivery order");
+    }
+
+    if (order.getStatus() == DeliveryStatus.OUT_FOR_DELIVERY) {
+      throw new IllegalStateException(
+        "Order is already OUT_FOR_DELIVERY; no approval is needed");
+    }
+
     ApprovalRequest request = new ApprovalRequest(
       orderId,
       orderNumber,
@@ -113,6 +130,11 @@ public class ApprovalRequestService {
       if (!order.getOrderNumber().equals(request.getOrderNumber())) {
         throw new IllegalStateException(
           "Approval order number does not match the delivery order");
+      }
+
+      if (order.getStatus() == DeliveryStatus.OUT_FOR_DELIVERY) {
+        throw new IllegalStateException(
+          "Order is already OUT_FOR_DELIVERY; no status change is needed");
       }
 
       deliveryOrderService.updateStatus(

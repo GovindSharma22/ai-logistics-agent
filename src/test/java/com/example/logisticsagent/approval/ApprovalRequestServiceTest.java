@@ -192,5 +192,46 @@ class ApprovalRequestServiceTest {
     assertEquals(ApprovalStatus.APPROVED, request.getStatus());
     verify(repository, never()).save(request);
   }
+  @Test
+  void executeApprovedAction_shouldRejectOrderAlreadyOutForDelivery() {
+    ApprovalRequest request = new ApprovalRequest(
+      3L,
+      "ORD-RISK-001",
+      "Move order to OUT_FOR_DELIVERY",
+      "Test duplicate status action."
+    );
+
+    request.approve("demo-user");
+
+    DeliveryOrder order = mock(DeliveryOrder.class);
+
+    when(repository.findById(5L))
+      .thenReturn(Optional.of(request));
+    when(deliveryOrderService.getById(3L))
+      .thenReturn(order);
+    //when(order.getId()).thenReturn(3L);
+    when(order.getOrderNumber()).thenReturn("ORD-RISK-001");
+    when(order.getStatus()).thenReturn(DeliveryStatus.OUT_FOR_DELIVERY);
+
+    IllegalStateException exception = assertThrows(
+      IllegalStateException.class,
+      () -> service.executeApprovedAction(5L)
+    );
+
+    assertEquals(
+      "Order is already OUT_FOR_DELIVERY; no status change is needed",
+      exception.getMessage()
+    );
+
+    verify(deliveryOrderService, never()).updateStatus(
+      3L, DeliveryStatus.OUT_FOR_DELIVERY
+    );
+
+    verify(auditService).recordFailure(
+      5L,
+      "Order is already OUT_FOR_DELIVERY; no status change is needed",
+      "demo-user"
+    );
+  }
 
 }
