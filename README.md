@@ -41,8 +41,10 @@ The application uses deterministic Java logic for delivery metrics and status va
 | JUnit and Mockito | Automated testing |
 | Springdoc OpenAPI | API documentation |
 
+
 ## Architecture
 
+![AI Logistics Agent Architecture](docs/architecture.png)
 The application follows a layered backend architecture.
 
 ```text
